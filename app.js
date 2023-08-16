@@ -1,18 +1,39 @@
-const express = require('express')
-const fileUpload = require('express-fileupload')
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const preview = document.getElementById('preview');
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
 
-const app = express()
+fileInput.addEventListener('change', function (event) {
+    const selectedFile = event.target.files[0];
 
-app.use(fileUpload())
+    fileInfo.innerHTML = `
+    <b>Nombre del archivo:</b> ${selectedFile.name}<br>
+    <b>Tipo MIME:</b> ${selectedFile.type}<br>
+    <b>Tamaño:</b> ${selectedFile.size} bytes
+  `;
 
-app.post('/upload',(req,res) => {
-    let EDFile = req.files.file
-    if(!EDFile) return res.status(400).send({ message : 'No files were uploaded' })
-    EDFile.mv(`./files/${EDFile.name}`,err => {
-        if(err) return res.status(500).send({ message : err })
+    if (isValidFileType(selectedFile.type) && selectedFile.size <= MAX_FILE_SIZE) {
+        preview.style.display = 'block';
+        preview.style.width = '300px';
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+        };
+        reader.readAsDataURL(selectedFile);
+    } else {
+        preview.style.display = 'none';
+        alert('El archivo no es válido');
+    }
+});
 
-        return res.status(200).send({ message : 'File upload' })
-    }) 
-})
+function isValidFileType(fileType) {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif'];
+    return allowedTypes.includes(fileType);
+}
 
-app.listen(3000,() => console.log('Running'))
+function formatFileSize(size) {
+    if (size === 0) return '0 bytes';
+    const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = parseInt(Math.floor(Math.log(size) / Math.log(1024)));
+    return Math.round(size / Math.pow(1024, i), 2) + ' ' + units[i];
+}
