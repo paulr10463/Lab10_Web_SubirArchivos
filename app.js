@@ -1,39 +1,25 @@
-const fileInput = document.getElementById('fileInput');
-const fileInfo = document.getElementById('fileInfo');
-const preview = document.getElementById('preview');
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
+const express = require('express');
+const fileUpload = require('express-fileupload');
 
-fileInput.addEventListener('change', function (event) {
-    const selectedFile = event.target.files[0];
+const app = express();
 
-    fileInfo.innerHTML = `
-    <b>Nombre del archivo:</b> ${selectedFile.name}<br>
-    <b>Tipo MIME:</b> ${selectedFile.type}<br>
-    <b>Tamaño:</b> ${selectedFile.size} bytes
-  `;
+app.use(fileUpload());
 
-    if (isValidFileType(selectedFile.type) && selectedFile.size <= MAX_FILE_SIZE) {
-        preview.style.display = 'block';
-        preview.style.width = '300px';
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            preview.src = e.target.result;
-        };
-        reader.readAsDataURL(selectedFile);
-    } else {
-        preview.style.display = 'none';
-        alert('El archivo no es válido');
-    }
+// Configuración de cabeceras CORS
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
 });
 
-function isValidFileType(fileType) {
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif'];
-    return allowedTypes.includes(fileType);
-}
+app.post('/upload', (req, res) => {
+  let EDFile = req.files.file;
+  EDFile.mv(`./files/${EDFile.name}`, err => {
+    if (err) return res.status(500).send({ message: err });
 
-function formatFileSize(size) {
-    if (size === 0) return '0 bytes';
-    const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = parseInt(Math.floor(Math.log(size) / Math.log(1024)));
-    return Math.round(size / Math.pow(1024, i), 2) + ' ' + units[i];
-}
+    return res.status(200).send({ message: 'File upload' });
+  });
+});
+
+app.listen(3000, () => console.log('Corriendo'));
